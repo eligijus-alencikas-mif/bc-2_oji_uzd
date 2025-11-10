@@ -2,9 +2,7 @@
 #define ELI_HASH
 
 #include <iostream>
-
-// Number of characters in the output hash
-#define HASH_OUTPUT_SIZE 64
+#include "globals.hpp"
 
 namespace eli_hash
 {
@@ -100,4 +98,4 @@ namespace eli_hash
     }
 }
 
-#endif
+#endif // ELI_HASH
