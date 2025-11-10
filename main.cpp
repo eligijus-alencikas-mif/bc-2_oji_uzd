@@ -9,10 +9,10 @@ int main(int argc, char **argv)
 
     for (size_t i = 0; i < 10000000; i++)
     {
-        std::string current_hash = eli_hash::hash(sequence.process_string());
+        std::string current_hash = eli_hash::hash(sequence.get_mut_string());
         if (current_hash.at(0) == '0' && current_hash.at(1) == '0' && current_hash.at(2) == '0')
         {
-            std::cout << current_hash << std::endl;
+            std::cout << current_hash << '\n';
         }
     }
 

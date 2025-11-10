@@ -38,7 +38,7 @@ public:
         }
     }
 
-    std::string process_string()
+    std::string get_mut_string()
     {
         this->increment_character();
         return current;
