@@ -7,13 +7,14 @@
 
 class char_loop
 {
+public:
     std::string current;
 
-    char_loop(std::string _current = "") : current(_current)
+    char_loop(const std::string &_current = "") : current(_current)
     {
-        if (_current == "")
+        if (_current.empty())
         {
-            _current += static_cast<char>(MIN_CHAR);
+            this->current = static_cast<char>(MIN_CHAR);
         }
     }
 
@@ -37,8 +38,10 @@ class char_loop
         }
     }
 
-    std::string get_next_string()
+    std::string process_string()
     {
+        this->increment_character();
+        return current;
     }
 };
 
