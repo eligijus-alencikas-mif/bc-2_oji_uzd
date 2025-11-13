@@ -139,6 +139,7 @@ namespace eli_blockchain
             {
                 block_body_str.append(transaction.content_concat());
             }
+            return block_body_str;
         }
 
         size_t transaction_id_increment()
@@ -155,22 +156,30 @@ namespace eli_blockchain
 
             while (true)
             {
-                bool found = false;
+                bool found = true;
 
-                string hash = eli_hash::hash(eli_blockchain::blockchain::block_header_format(prev_block_hash, timestamp, eli_globals::version, root_hash, nonce.get_and_increment(), difficulty_target));
+                string hash = eli_hash::hash(eli_blockchain::blockchain::block_header_format(prev_block_hash, timestamp, eli_globals::version, root_hash, nonce.get(), difficulty_target));
                 for (size_t i = 0; i < difficulty_target; i++)
                 {
+                    if (hash.at(0) == '0' && hash.at(1) == '0')
+                    {
+                        std::cout << hash << std::endl;
+                    }
+
                     if (hash.at(i) != '0')
                     {
                         found = false;
                         break;
                     }
+
                     found = true;
                 }
                 if (found)
                 {
                     break;
                 }
+
+                nonce.increment_character();
             }
 
             return nonce.get();
@@ -180,7 +189,6 @@ namespace eli_blockchain
         void add_block(const std::vector<eli_blockchain::transaction> &idless_transactions, const size_t &difficulty_target = 3)
         {
             std::vector<eli_blockchain::blockchain::transaction> transactions;
-            const string root_hash = eli_blockchain::blockchain::block::calculate_root_hash(transactions);
             const std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
 
             for (auto idl_t : idless_transactions)
@@ -188,6 +196,8 @@ namespace eli_blockchain
                 eli_blockchain::blockchain::transaction t(transaction_id_increment(), idl_t);
                 transactions.push_back(t);
             }
+
+            const string root_hash = eli_blockchain::blockchain::block::calculate_root_hash(transactions);
 
             string prev_block_hash = "";
             if (!block_chain.empty())

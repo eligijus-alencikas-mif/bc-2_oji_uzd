@@ -7,21 +7,25 @@
 
 int main(int argc, char **argv)
 {
-    // char_loop sequence;
+    eli_blockchain::blockchain my_chain;
+    std::vector<eli_blockchain::transaction> my_transactions;
 
-    // for (size_t i = 0; i < 1000000; i++)
-    // {
-    //     std::string current_hash = eli_hash::hash(sequence.get_mut_string());
-    //     if (current_hash.at(0) == '0' && current_hash.at(1) == '0' && current_hash.at(2) == '0')
-    //     {
-    //         std::cout << current_hash << '\n';
-    //     }
-    // }
+    eli_blockchain::transaction a_transaction("a", "b", 5);
 
-    // std::chrono::system_clock::time_point timestamp;
-    // timestamp = std::chrono::system_clock::now();
-    // auto my_time = std::chrono::system_clock::to_time_t(timestamp);
-    // std::cout << std::to_string(my_time);
+    my_transactions.push_back(a_transaction);
+
+    a_transaction.amount = 2;
+    a_transaction.sender = "c";
+    a_transaction.receiver = "b";
+
+    my_transactions.push_back(a_transaction);
+
+    a_transaction.amount = 2.2;
+    a_transaction.receiver = "a";
+
+    my_transactions.push_back(a_transaction);
+
+    my_chain.add_block(my_transactions, 2);
 
     return 0;
 }

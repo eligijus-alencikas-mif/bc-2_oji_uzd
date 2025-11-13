@@ -2,8 +2,8 @@
 #define CHAR_LOOP
 
 #include <iostream>
-#define MIN_CHAR 32
-#define MAX_CHAR 126
+#define MIN_CHAR 0
+#define MAX_CHAR 255
 
 class char_loop
 {
