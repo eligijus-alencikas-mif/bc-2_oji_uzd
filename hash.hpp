@@ -9,7 +9,7 @@ namespace eli_hash
     // Global incrementor used in the hash functions to add variability
     // size_t incrementor = 1;
 
-    // Concatenates two number (unsinged short) values
+    // Concatenates two number (unsigned short) values
     size_t concatenate(const unsigned short a, const unsigned short b)
     {
         std::string result = std::to_string(a);
@@ -19,7 +19,7 @@ namespace eli_hash
 
     // The ASCII character range the hash functions splitChar and combineChars return is from 33 to 126. Total unique characters: 94
 
-    // Part of the hash function. Takes one character and determanistically returns two random characters based on the input character and the incrementor
+    // Part of the hash function. Takes one character and deterministically returns two random characters based on the input character and the incrementor
     std::string splitChar(unsigned char target, size_t &incrementor)
     {
         std::string split;
@@ -34,7 +34,7 @@ namespace eli_hash
         return split;
     }
 
-    // Part of the hash function. Takes two characters and determanistacally returns one random character based on both input characters and the incrementor
+    // Part of the hash function. Takes two characters and deterministically returns one random character based on both input characters and the incrementor
     char combineChars(unsigned const char a, unsigned const char b, size_t &incrementor)
     {
         auto position = concatenate(a, b);

@@ -4,12 +4,11 @@
 // Number of characters in the output hash
 #define HASH_OUTPUT_SIZE 64
 
-#include <vector>
-#include "block.hpp"
+#include <string>
 
 namespace eli_globals
 {
-
+    std::string version = "0.01";
 } // namespace eli_globals
 
 #endif // ELI_GLOBALS
