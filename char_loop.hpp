@@ -38,7 +38,12 @@ public:
         }
     }
 
-    std::string get_mut_string()
+    std::string get()
+    {
+        return current;
+    }
+
+    std::string get_and_increment()
     {
         this->increment_character();
         return current;

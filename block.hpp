@@ -3,8 +3,11 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
 #include <ctime>
 #include "globals.hpp"
+#include "hash.hpp"
+#include "char_loop.hpp"
 
 using std::string;
 
@@ -12,55 +15,194 @@ namespace eli_blockchain
 {
     class transaction
     {
-    private:
-        // Not to self: make the block_chain class handle the uniquiness and continuity of transaction_id
-        const size_t transaction_id;
-        const string sender;
-        const string reciever;
-        const double amount;
-
     public:
-        transaction(const size_t &_transaction_id, const string &_sender, const string &_reciever, const double &_amount) : transaction_id(_transaction_id), sender(_sender), reciever(_reciever), amount(_amount) {}
+        string sender;
+        string receiver;
+        double amount;
+
+        transaction(const string &_sender, const string &_receiver, const double &_amount) : sender(_sender), receiver(_receiver), amount(_amount) {}
     };
 
-    class block
+    class blockchain
     {
     private:
-        string prev_block_hash;
-        time_t timestamp;
-        string version;
-        string root_hash;
-        string nonce;
-        size_t difficulty_target;
-        std::vector<transaction> transactions;
-
-    public:
-        std::vector<transaction> get_transactions()
+        class transaction
         {
-            return transactions;
-        }
-    };
+        private:
+            const size_t transaction_id;
+            const string sender;
+            const string receiver;
+            const double amount;
 
-    class block_chain
-    {
-    private:
-        std::vector<block> block_chain;
+        public:
+            transaction(const size_t &_transaction_id, const string &_sender, const string &_receiver, const double &_amount)
+                : transaction_id(_transaction_id), sender(_sender), receiver(_receiver), amount(_amount) {}
+            transaction(const size_t &_transaction_id, const eli_blockchain::transaction &idless_transaction)
+                : transaction_id(_transaction_id), sender(idless_transaction.sender), receiver(idless_transaction.receiver), amount(idless_transaction.amount) {}
 
-    public:
-        size_t get_next_transaction_id() const
-        {
-            size_t transaction_id = 0;
-
-            for (auto block : this->block_chain)
+            string content_concat() const
             {
-                transaction_id += block.get_transactions().size();
+                string content_str = std::to_string(this->transaction_id);
+                content_str.append(this->sender);
+                content_str.append(this->receiver);
+                content_str.append(std::to_string(this->amount));
+                return content_str;
             }
 
-            return transaction_id;
+            string get_checksum() const
+            {
+                return eli_hash::hash(this->content_concat());
+            }
+
+            friend class blockchain;
+        };
+
+        class block
+        {
+        private:
+            const string prev_block_hash;
+            const std::chrono::system_clock::time_point timestamp;
+            const string version;
+            const string root_hash;
+            const string nonce;
+            const size_t difficulty_target;
+            const std::vector<eli_blockchain::blockchain::transaction> transactions;
+
+            static string calculate_root_hash(const std::vector<eli_blockchain::blockchain::transaction> &ts)
+            {
+                return eli_hash::hash(eli_blockchain::blockchain::block_body_format(ts));
+            }
+
+        public:
+            block(const string &_prev_block_hash,
+                  const std::chrono::system_clock::time_point &_timestamp,
+                  const string &_root_hash,
+                  const string &_nonce,
+                  const size_t &_difficulty_target,
+                  const std::vector<eli_blockchain::blockchain::transaction> &_transactions)
+                : prev_block_hash(_prev_block_hash),
+                  root_hash(_root_hash),
+                  difficulty_target(_difficulty_target),
+                  transactions(_transactions),
+                  timestamp(_timestamp),
+                  version(eli_globals::version),
+                  nonce(_nonce)
+            {
+            }
+
+            time_t get_timestamp() const
+            {
+                return std::chrono::system_clock::to_time_t(this->timestamp);
+            }
+
+            std::vector<blockchain::transaction> get_transactions() const
+            {
+                return transactions;
+            }
+
+            string get_checksum() const
+            {
+                return eli_hash::hash(eli_blockchain::blockchain::block_header_format(this));
+            }
+
+            friend class blockchain;
+        };
+
+        std::vector<block> block_chain;
+        size_t transaction_count = 0;
+
+        static string block_header_format(const string &prev_block_hash,
+                                          const std::chrono::system_clock::time_point &timestamp,
+                                          const string &version,
+                                          const string &root_hash,
+                                          const string &nonce,
+                                          const size_t &difficulty_target)
+        {
+            string block_header_str = prev_block_hash;
+            block_header_str.append(std::to_string(std::chrono::system_clock::to_time_t(timestamp)));
+            block_header_str.append(version);
+            block_header_str.append(root_hash);
+            block_header_str.append(nonce);
+            block_header_str.append(std::to_string(difficulty_target));
+            return block_header_str;
         }
 
-        void add_block(block _block)
+        static string block_header_format(const eli_blockchain::blockchain::block *b)
         {
+            return block_header_format(b->prev_block_hash, b->timestamp, b->version, b->root_hash, b->nonce, b->difficulty_target);
+        }
+
+        static string block_body_format(const std::vector<eli_blockchain::blockchain::transaction> &transactions)
+        {
+            string block_body_str = "";
+            for (auto transaction : transactions)
+            {
+                block_body_str.append(transaction.content_concat());
+            }
+        }
+
+        size_t transaction_id_increment()
+        {
+            return transaction_count++;
+        }
+
+        string gen_nonce(const string &prev_block_hash,
+                         const std::chrono::system_clock::time_point &timestamp,
+                         const string &root_hash,
+                         const size_t &difficulty_target)
+        {
+            char_loop nonce;
+
+            while (true)
+            {
+                bool found = false;
+
+                string hash = eli_hash::hash(eli_blockchain::blockchain::block_header_format(prev_block_hash, timestamp, eli_globals::version, root_hash, nonce.get_and_increment(), difficulty_target));
+                for (size_t i = 0; i < difficulty_target; i++)
+                {
+                    if (hash.at(i) != '0')
+                    {
+                        found = false;
+                        break;
+                    }
+                    found = true;
+                }
+                if (found)
+                {
+                    break;
+                }
+            }
+
+            return nonce.get();
+        }
+
+    public:
+        void add_block(const std::vector<eli_blockchain::transaction> &idless_transactions, const size_t &difficulty_target = 3)
+        {
+            std::vector<eli_blockchain::blockchain::transaction> transactions;
+            const string root_hash = eli_blockchain::blockchain::block::calculate_root_hash(transactions);
+            const std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
+
+            for (auto idl_t : idless_transactions)
+            {
+                eli_blockchain::blockchain::transaction t(transaction_id_increment(), idl_t);
+                transactions.push_back(t);
+            }
+
+            string prev_block_hash = "";
+            if (!block_chain.empty())
+            {
+                prev_block_hash = this->block_chain.back().get_checksum();
+            }
+
+            std::cout << "Generating nonce" << std::endl;
+
+            const string nonce = gen_nonce(prev_block_hash, timestamp, root_hash, difficulty_target);
+
+            std::cout << "Generated nonce:" << nonce << std::endl;
+
+            eli_blockchain::blockchain::block b(prev_block_hash, timestamp, root_hash, nonce, difficulty_target, transactions);
+            this->block_chain.push_back(b);
         }
     };
 
