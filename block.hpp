@@ -83,7 +83,7 @@ namespace eli_blockchain
 
             static string calculate_root_hash(const std::vector<eli_blockchain::transaction> &ts)
             {
-                return eli_hash::hash(eli_blockchain::blockchain::block_body_format(ts));
+                return gen_merkle_root(ts);
             }
 
         public:
@@ -123,6 +123,7 @@ namespace eli_blockchain
 
         std::vector<block> block_chain;
         eli_users::user_pool users;
+        bool gen_timeout;
 
         static string block_header_format(const string &prev_block_hash,
                                           const std::chrono::system_clock::time_point &timestamp,
@@ -155,11 +156,47 @@ namespace eli_blockchain
             return block_body_str;
         }
 
+        static string gen_merkle_root(const std::vector<eli_blockchain::transaction> &transactions)
+        {
+            if (transactions.empty())
+            {
+                return "";
+            }
+
+            std::vector<string> layer;
+            for (const auto &t : transactions)
+            {
+                layer.push_back(t.get_checksum());
+            }
+
+            while (layer.size() > 1)
+            {
+                std::vector<string> next_layer;
+                for (size_t i = 0; i < layer.size(); i += 2)
+                {
+                    if (i + 1 < layer.size())
+                    {
+                        next_layer.push_back(eli_hash::hash(layer[i] + layer[i + 1]));
+                    }
+                    else
+                    {
+                        next_layer.push_back(layer[i]);
+                    }
+                }
+                layer = next_layer;
+            }
+
+            return layer.front();
+        }
+
         string gen_nonce(const string &prev_block_hash,
                          const std::chrono::system_clock::time_point &timestamp,
                          const string &root_hash,
                          const size_t &difficulty_target)
         {
+            this->gen_timeout = false;
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
             char_loop nonce;
 
             while (true)
@@ -183,6 +220,14 @@ namespace eli_blockchain
                 }
 
                 nonce.increment_character();
+
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() > 500)
+                {
+                    this->gen_timeout = true;
+                    break;
+                }
             }
 
             return nonce.get();
@@ -194,7 +239,7 @@ namespace eli_blockchain
             this->users.add_user(_name, _balance);
         }
 
-        void add_block(const std::vector<eli_blockchain::transaction> &transactions, const size_t &difficulty_target = 3)
+        bool add_block(const std::vector<eli_blockchain::transaction> &transactions, const size_t &difficulty_target = 3)
         {
             const std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
 
@@ -208,6 +253,11 @@ namespace eli_blockchain
 
             const string nonce = gen_nonce(prev_block_hash, timestamp, root_hash, difficulty_target);
 
+            if (this->gen_timeout)
+            {
+                return false;
+            }
+
             eli_blockchain::blockchain::block b(prev_block_hash, timestamp, root_hash, nonce, difficulty_target, transactions);
             this->block_chain.push_back(b);
 
@@ -215,6 +265,8 @@ namespace eli_blockchain
             {
                 this->make_transaction(t);
             }
+
+            return true;
         }
 
         void make_transaction(eli_blockchain::transaction t)

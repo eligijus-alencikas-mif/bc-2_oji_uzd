@@ -87,14 +87,23 @@ int main(int argc, char **argv)
         my_chain.add_user("User_" + std::to_string(i), balance_dist(gen));
     }
 
+    std::vector<eli_blockchain::transaction> transactions;
+    fill_transactions(transactions, my_chain.get_user_pool(), number_of_transactions, 10000);
+
     for (size_t i = 0; i < number_of_blocks; i++)
     {
-        std::vector<eli_blockchain::transaction> transactions;
 
-        fill_transactions(transactions, my_chain.get_user_pool(), number_of_transactions, 10000);
-        my_chain.add_block(transactions, difficulty_target);
+        if (!my_chain.add_block(transactions, difficulty_target))
+        {
+            std::cout << "Block generation timed out" << std::endl;
+            i--;
+            continue;
+        }
         std::cout << my_chain.get_block_header().str() << std::endl;
-        std::cout << my_chain.get_block_body().str() << std::endl;
+        // std::cout << my_chain.get_block_body().str() << std::endl;
+
+        transactions.clear();
+        fill_transactions(transactions, my_chain.get_user_pool(), number_of_transactions, 10000);
     }
     return 0;
 }

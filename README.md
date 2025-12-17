@@ -29,3 +29,11 @@ Paleisti Blockchain su šitais konsolės parametrais:
 * ``-t`` specifikuoja kiek "transactions" turės kiekvienas blokas
 * ``-d`` specifikuoja blokų kasimo lygį (Kiek 0 yra "hash" pradžioje)
 * ``-u`` specifikuoja blokų grandinės naudotojų kiekį
+
+## Dirbtinio intelekto naudojimas
+
+Dirbtinis intelektas buvo naudojamas perdaryti hash funkciją ir argumentų nuskaitymui.
+
+## Decentralizuoto kasimo simuliacija
+
+Kasimas nutraukiamas kai kasimas užtrunka 0.5s tada kasimas vėl išnaujo paleidžiamas su tais pačiais duomenimis iki kol spėjama iškasti bloką
