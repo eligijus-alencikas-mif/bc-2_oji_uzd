@@ -8,6 +8,7 @@
 #include "globals.hpp"
 #include "hash.hpp"
 #include "char_loop.hpp"
+#include "users.hpp"
 
 using std::string;
 
@@ -22,7 +23,23 @@ namespace eli_blockchain
         const double amount;
 
     public:
-        transaction(const string &_sender, const string &_receiver, const double &_amount) : transaction_id(eli_hash::hash(sender + receiver + std::to_string(amount))), sender(_sender), receiver(_receiver), amount(_amount) {}
+        transaction(const string &_sender, const string &_receiver, const double &_amount)
+            : transaction_id(eli_hash::hash(_sender + _receiver + std::to_string(_amount))), sender(_sender), receiver(_receiver), amount(_amount) {}
+
+        string get_sender() const
+        {
+            return this->sender;
+        }
+
+        string get_receiver() const
+        {
+            return this->receiver;
+        }
+
+        double get_amount() const
+        {
+            return this->amount;
+        }
 
         string content_concat() const
         {
@@ -53,100 +70,6 @@ namespace eli_blockchain
     class blockchain
     {
     private:
-        class user_pool
-        {
-        private:
-            class user
-            {
-            private:
-                const std::string name;
-                const std::string public_key;
-                double balance;
-
-            public:
-                user(const std::string &_name, const std::string &_public_key, const double &_balance)
-                    : name(_name), public_key(_public_key), balance(_balance) {}
-
-                std::string get_name() const
-                {
-                    return this->name;
-                }
-
-                double get_balance() const
-                {
-                    return this->balance;
-                }
-
-                std::string get_public_key() const
-                {
-                    return this->public_key;
-                }
-
-                bool adjust_balance(const double &amount)
-                {
-                    if (this->balance + amount < 0)
-                    {
-                        return false;
-                    }
-
-                    this->balance += amount;
-                    return true;
-                }
-            };
-
-            char_loop public_key_generator;
-            std::vector<user> users;
-
-        public:
-            void add_user(const std::string &_name, const double &_balance)
-            {
-                users.emplace_back(_name, eli_hash::hash(this->public_key_generator.get_and_increment() + _name), _balance);
-            }
-
-            double get_user_balance(const std::string &_public_key) const
-            {
-                for (const auto &u : users)
-                {
-                    if (u.get_public_key() == _public_key)
-                    {
-                        return u.get_balance();
-                    }
-                }
-                throw std::invalid_argument("User with the given public key not found");
-            }
-        };
-
-        // class transaction
-        // {
-        // private:
-        //     const size_t transaction_id;
-        //     const string sender;
-        //     const string receiver;
-        //     const double amount;
-
-        // public:
-        //     transaction(const size_t &_transaction_id, const string &_sender, const string &_receiver, const double &_amount)
-        //         : transaction_id(_transaction_id), sender(_sender), receiver(_receiver), amount(_amount) {}
-        //     transaction(const size_t &_transaction_id, const eli_blockchain::transaction &idless_transaction)
-        //         : transaction_id(_transaction_id), sender(idless_transaction.sender), receiver(idless_transaction.receiver), amount(idless_transaction.amount) {}
-
-        //     string content_concat() const
-        //     {
-        //         string content_str = std::to_string(this->transaction_id);
-        //         content_str.append(this->sender);
-        //         content_str.append(this->receiver);
-        //         content_str.append(std::to_string(this->amount));
-        //         return content_str;
-        //     }
-
-        //     string get_checksum() const
-        //     {
-        //         return eli_hash::hash(this->content_concat());
-        //     }
-
-        //     friend class blockchain;
-        // };
-
         class block
         {
         private:
@@ -199,7 +122,7 @@ namespace eli_blockchain
         };
 
         std::vector<block> block_chain;
-        size_t transaction_count = 0;
+        eli_users::user_pool users;
 
         static string block_header_format(const string &prev_block_hash,
                                           const std::chrono::system_clock::time_point &timestamp,
@@ -230,11 +153,6 @@ namespace eli_blockchain
                 block_body_str.append(transaction.content_concat());
             }
             return block_body_str;
-        }
-
-        size_t transaction_id_increment()
-        {
-            return transaction_count++;
         }
 
         string gen_nonce(const string &prev_block_hash,
@@ -271,6 +189,11 @@ namespace eli_blockchain
         }
 
     public:
+        void add_user(const string &_name, const double &_balance)
+        {
+            this->users.add_user(_name, _balance);
+        }
+
         void add_block(const std::vector<eli_blockchain::transaction> &transactions, const size_t &difficulty_target = 3)
         {
             const std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
@@ -287,6 +210,16 @@ namespace eli_blockchain
 
             eli_blockchain::blockchain::block b(prev_block_hash, timestamp, root_hash, nonce, difficulty_target, transactions);
             this->block_chain.push_back(b);
+
+            for (const auto &t : transactions)
+            {
+                this->make_transaction(t);
+            }
+        }
+
+        void make_transaction(eli_blockchain::transaction t)
+        {
+            this->users.transfer_balance(t.get_sender(), t.get_receiver(), t.get_amount());
         }
 
         std::stringstream get_block_header(const size_t &index) const
@@ -336,6 +269,22 @@ namespace eli_blockchain
         std::stringstream get_block_body() const
         {
             return get_block_body(this->block_chain.size() - 1);
+        }
+
+        std::string list_users() const
+        {
+            std::stringstream ss;
+            ss << "Users:\n";
+            for (const auto &public_key : this->users.get_all_user_public_keys())
+            {
+                ss << "Public Key: " << public_key << ", Balance: " << this->users.get_user_balance(public_key) << "\n";
+            }
+            return ss.str();
+        }
+
+        eli_users::user_pool get_user_pool() const
+        {
+            return this->users;
         }
     };
 
