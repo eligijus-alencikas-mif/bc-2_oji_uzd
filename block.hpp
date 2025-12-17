@@ -205,6 +205,32 @@ namespace eli_blockchain
             eli_blockchain::blockchain::block b(prev_block_hash, timestamp, root_hash, nonce, difficulty_target, transactions);
             this->block_chain.push_back(b);
         }
+
+        std::stringstream get_block_header(const size_t &index) const
+        {
+            if (index >= this->block_chain.size())
+            {
+                throw std::out_of_range("Block index out of range");
+            }
+
+            const eli_blockchain::blockchain::block &b = this->block_chain.at(index);
+            std::stringstream ss;
+            ss << "Block Index: " << index << "\n";
+            ss << "Previous Block Hash: " << b.prev_block_hash << "\n";
+            ss << "Timestamp: " << b.get_timestamp() << "\n";
+            ss << "Version: " << b.version << "\n";
+            ss << "Root Hash: " << b.root_hash << "\n";
+            ss << "Nonce: " << b.nonce << "\n";
+            ss << "Difficulty Target: " << b.difficulty_target << "\n";
+            ss << "Block Checksum: " << b.get_checksum() << "\n";
+
+            return ss;
+        }
+
+        std::stringstream get_block_header() const
+        {
+            return get_block_header(this->block_chain.size() - 1);
+        }
     };
 
 };

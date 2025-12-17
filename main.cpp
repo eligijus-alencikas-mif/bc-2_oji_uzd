@@ -8,24 +8,20 @@
 int main(int argc, char **argv)
 {
     eli_blockchain::blockchain my_chain;
-    std::vector<eli_blockchain::transaction> my_transactions;
+    std::vector<eli_blockchain::transaction> transactions;
 
-    eli_blockchain::transaction a_transaction("a", "b", 5);
+    transactions.push_back(eli_blockchain::transaction("a", "b", 5));
+    transactions.push_back(eli_blockchain::transaction("ac", "b", 2));
 
-    my_transactions.push_back(a_transaction);
+    my_chain.add_block(transactions, 3);
 
-    a_transaction.amount = 2;
-    a_transaction.sender = "c";
-    a_transaction.receiver = "b";
+    transactions.push_back(eli_blockchain::transaction("a", "b", 5));
+    transactions.push_back(eli_blockchain::transaction("ac", "b", 2));
 
-    my_transactions.push_back(a_transaction);
+    my_chain.add_block(transactions, 3);
 
-    a_transaction.amount = 2.2;
-    a_transaction.receiver = "a";
-
-    my_transactions.push_back(a_transaction);
-
-    my_chain.add_block(my_transactions, 2);
+    std::cout << my_chain.get_block_header(0).str() << std::endl;
+    std::cout << my_chain.get_block_header().str() << std::endl;
 
     return 0;
 }
