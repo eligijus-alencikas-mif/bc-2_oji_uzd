@@ -13,15 +13,17 @@ int main(int argc, char **argv)
     transactions.push_back(eli_blockchain::transaction("a", "b", 5));
     transactions.push_back(eli_blockchain::transaction("ac", "b", 2));
 
-    my_chain.add_block(transactions, 3);
+    my_chain.add_block(transactions);
 
     transactions.push_back(eli_blockchain::transaction("a", "b", 5));
     transactions.push_back(eli_blockchain::transaction("ac", "b", 2));
 
-    my_chain.add_block(transactions, 3);
+    my_chain.add_block(transactions);
 
     std::cout << my_chain.get_block_header(0).str() << std::endl;
+    std::cout << my_chain.get_block_body(0).str() << std::endl;
     std::cout << my_chain.get_block_header().str() << std::endl;
+    std::cout << my_chain.get_block_body().str() << std::endl;
 
     return 0;
 }
