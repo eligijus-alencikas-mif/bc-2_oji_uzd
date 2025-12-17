@@ -37,6 +37,45 @@ void fill_transactions(std::vector<eli_blockchain::transaction> &transactions, e
 
 int main(int argc, char **argv)
 {
+    int number_of_blocks = -1;
+    int number_of_transactions = -1;
+    int difficulty_target = -1;
+    int number_of_users = -1;
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+
+        if (arg == "-b" && i + 1 < argc)
+        {
+            number_of_blocks = std::stoul(argv[++i]);
+        }
+        else if (arg == "-t" && i + 1 < argc)
+        {
+            number_of_transactions = std::stoul(argv[++i]);
+        }
+        else if (arg == "-d" && i + 1 < argc)
+        {
+            difficulty_target = std::stoul(argv[++i]);
+        }
+        else if (arg == "-u" && i + 1 < argc)
+        {
+            number_of_users = std::stoul(argv[++i]);
+        }
+        else
+        {
+            std::cerr << "Unknown argument: " << arg << "\n";
+            return 1;
+        }
+    }
+
+    // Validate inputs
+    if (number_of_blocks == -1 || number_of_transactions == -1 || difficulty_target == -1 || number_of_users == -1)
+    {
+        std::cerr << "Usage: " << argv[0] << " -b <number_of_blocks> -t <number_of_transactions> -d <difficulty_target> -u <number_of_users> \n";
+        return 1;
+    }
+
     eli_blockchain::blockchain my_chain;
 
     // generate 1000 users with balances between 100 and 1000000
@@ -48,17 +87,14 @@ int main(int argc, char **argv)
         my_chain.add_user("User_" + std::to_string(i), balance_dist(gen));
     }
 
-    std::vector<eli_blockchain::transaction> transactions;
+    for (size_t i = 0; i < number_of_blocks; i++)
+    {
+        std::vector<eli_blockchain::transaction> transactions;
 
-    fill_transactions(transactions, my_chain.get_user_pool(), 1000, 10000);
-    my_chain.add_block(transactions);
-    transactions.clear();
-    fill_transactions(transactions, my_chain.get_user_pool(), 1000, 10000);
-    my_chain.add_block(transactions);
-
-    std::cout << my_chain.get_block_header(0).str() << std::endl;
-    std::cout << my_chain.get_block_header().str() << std::endl;
-    // std::cout << my_chain.get_block_body().str() << std::endl;
-
+        fill_transactions(transactions, my_chain.get_user_pool(), number_of_transactions, 10000);
+        my_chain.add_block(transactions, difficulty_target);
+        std::cout << my_chain.get_block_header().str() << std::endl;
+        std::cout << my_chain.get_block_body().str() << std::endl;
+    }
     return 0;
 }
