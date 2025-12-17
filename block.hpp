@@ -161,11 +161,6 @@ namespace eli_blockchain
                 string hash = eli_hash::hash(eli_blockchain::blockchain::block_header_format(prev_block_hash, timestamp, eli_globals::version, root_hash, nonce.get(), difficulty_target));
                 for (size_t i = 0; i < difficulty_target; i++)
                 {
-                    if (hash.at(0) == '0' && hash.at(1) == '0')
-                    {
-                        std::cout << hash << std::endl;
-                    }
-
                     if (hash.at(i) != '0')
                     {
                         found = false;
@@ -205,11 +200,7 @@ namespace eli_blockchain
                 prev_block_hash = this->block_chain.back().get_checksum();
             }
 
-            std::cout << "Generating nonce" << std::endl;
-
             const string nonce = gen_nonce(prev_block_hash, timestamp, root_hash, difficulty_target);
-
-            std::cout << "Generated nonce:" << nonce << std::endl;
 
             eli_blockchain::blockchain::block b(prev_block_hash, timestamp, root_hash, nonce, difficulty_target, transactions);
             this->block_chain.push_back(b);
